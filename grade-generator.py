@@ -20,7 +20,7 @@ def validation():
             break
         print("Invalid category. Please enter 'FA' or 'SA'.")
 
-  # Grade
+     # Grade
     while True:
         try:
             grade = float(input("Enter the grade (0-100): "))
@@ -29,7 +29,7 @@ def validation():
             print("Grade must be between 0 and 100.")
         except ValueError:
             print("Please enter a numeric grade.")
-  # Weight
+    # Weight
     while True:
         try:
             weight = int(input("Enter the weight of the assignment: "))
