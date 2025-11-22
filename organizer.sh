@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Script to organize and archive CSV files with timestamped names and log the operations.
-ARCHIVE_dir="/mnt/c/Users/HP/OneDrive/Desktop/summative/-Lab01---brina-cloud/archive"
+ARCHIVE_dir="/mnt/c/Users/HP/OneDrive/Desktop/summative/-Lab01---brina-cloud-/archive"
 if [ ! -d "$ARCHIVE_dir" ]; then
     mkdir "$ARCHIVE_dir"
 fi
