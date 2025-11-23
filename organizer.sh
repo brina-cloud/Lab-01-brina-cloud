@@ -9,7 +9,7 @@ log="organizer.log"
 touch "$log"
 
 for file in $(find . -maxdepth 1 -type f -name "*.csv"); do
-    TIMEASTAMP=$(date +%Y%m%d%H%M%S)
+    TIMEASTAMP=$(date +%Y%m%d-%H%M%S)
     basename=$(basename "$file")
     new_name="${basename%.csv}-${TIMEASTAMP}.csv"
     
