@@ -1,48 +1,52 @@
 #!/usr/bin/python3
-import csv 
+import csv
 import sys
+
 """Grade Generator Script"""
-#This is grade generator created by KALIZA SABRINA. It will help calculating grades.
+# Created by KALIZA SABRINA
+
 def validation():
     """Prompts and validates user input for one assignment. Returns a tuple."""
     
-    # Assignment name
+    
+    # 1. Assignment Name
     while True:
-        assignment_name = input("Enter the Assignment name: ").strip()
+        assignment_name = input("Enter Assignment Name: ").strip()
         if assignment_name:
             break
-        print("Invalid assignment name. Please enter a non-empty string.")
+        print("name cannot be empty.")
 
-    # Category
+    # 2. Category
     while True:
-        category = input("Enter the category of the assignment (FA/SA): ").upper()
+        category = input("Ente the category(FA/SA): ").strip().upper()
         if category in ['FA', 'SA']:
             break
-        print("Invalid category. Please enter 'FA' or 'SA'.")
+        print("The category must be 'FA'  or 'SA' .")
 
-     # Grade
+    # 3. Grade
     while True:
         try:
-            grade = float(input("Enter the grade (0-100): "))
+            grade = float(input("Enter the grades(0-100): "))
             if 0 <= grade <= 100:
                 break
-            print("Grade must be between 0 and 100.")
+            print("grade must be between 0 and 100.")
         except ValueError:
-            print("Please enter a numeric grade.")
-    # Weight
+            print("grade must be a valid number.")
+
+    # 4. Weight
     while True:
         try:
-            weight = int(input("Enter the weight of the assignment: "))
+            weight = int(input("Enter the weight: "))
             if weight > 0:
                 break
-            print("Weight must be a positive integer.")
+            print("weight must be a positive integer.")
         except ValueError:
-            print("Please enter an integer for weight.")
+            print("weight must be a valid number.")
 
     return assignment_name, category, grade, weight
 
 
-def calculation_logic(category, grade, weight, FA, SA, assignment_name):
+def calculation_logic(category, grade, weight, FA, SA):
     """Calculates and updates FA/SA values."""
     weighted_grade = weight * (grade / 100)
 
@@ -50,60 +54,119 @@ def calculation_logic(category, grade, weight, FA, SA, assignment_name):
         FA += weighted_grade
     else:
         SA += weighted_grade
-
-    total_grade = FA + SA
-    gpa = (total_grade / 100) * 5.0
-
-    FA_pass = 60 * 0.5
-    SA_pass = 40 * 0.5
-
-    print("\n... RESULTS ...")
-    print(f"Total Formative: {FA:.2f} / 60")
-    print(f"Total Summative: {SA:.2f} / 40")
-    print(f"-------------------------")
-    print(f"Total Grade:     {total_grade:.2f} / 100")
-    print(f"GPA:             {gpa:.4f}")
-
-    if FA >= FA_pass and SA >= SA_pass:
-        print("Status:          PASS")
-    else:
-        print("Status:          FAIL")
-        print(f"Resubmission:    {assignment_name}")
-
+    
     return FA, SA
 
 
 def export_to_csv(assignments, filename="grades.csv"):
     """Exports all assignment data to a CSV file."""
-    with open(filename, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(["Assignment Name", "Category", "Grade", "Weight"])
-        for assignment in assignments:
-            writer.writerow(assignment)
-
-    print(f"\nGrades exported to {filename}")
+    try:
+        with open(filename, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["Assignment", "Category", "Grade", "Weight"])
+            for assignment in assignments:
+                # assignment is a tuple: (name, cat, grade, weight)
+                writer.writerow(assignment)
+        print(f"\nGrades exported to {filename}")
+    except Exception as e:
+        print(f"Oops: Error exporting file: {e}")
 
 
 def main():
+    
+    print("\n=== Grade Generator ===\n")
     assignments = []
     FA = 0
     SA = 0
+    FA_weight_total = 0
+    SA_weight_total = 0
 
+    # --- INPUT LOOP ---
     while True:
-        assignment_data = validation()  # get validated user input
-        assignments.append(assignment_data)
+        # Get validated user input
+        data = validation() 
+        assignments.append(data)
 
-        name, category, grade, weight = assignment_data
-        FA, SA = calculation_logic(category, grade, weight, FA, SA, name)
+        name, category, grade, weight = data
+        
+        # Track weights for accurate passing logic
+        if category == 'FA':
+            FA_weight_total += weight
+        else:
+            SA_weight_total += weight
 
-        cont = input("\nDo you want to add another assignment? (y/n): ").lower()
-        if cont != 'y':
+        # Update score totals
+        FA, SA = calculation_logic(category, grade, weight, FA, SA)
+        
+
+        dev = input("\nAdd another assignment? (y/n): ").strip().lower()
+        if dev not in ['y', 'Y']:
             break
 
+    if not assignments:
+        print("\nNo assignments entered. Exiting.")
+        sys.exit(0)
+
+    # --- FINAL CALCULATIONS ---
+    total_grade = FA + SA
+    
+    # GPA Calculation: (Total Grade / 100) * 5.0
+    gpa = (total_grade / 100) * 5.0
+
+    # Pass/Fail Logic: Must have >= 50% of the points in BOTH categories
+    FA_pass = FA >= 30
+    SA_pass = SA >= 20
+    
+    if FA_pass and SA_pass:
+        status = "PASS"
+    else:
+        status = "FAIL"
+
+    # Resubmission Logic
+
+    if status == "PASS":
+        # If PASS, check for any assignment with grade < 50
+        
+        # Iterate through assignments and check if grade (index 2) is < 50
+        low_scoring_assignments = [a for a in assignments if a[2] < 50]
+        
+        if low_scoring_assignments:
+            worst = min(low_scoring_assignments, key=lambda x: x[2])
+            result = worst[0]
+        else:
+            result = ["None"]
+
+    else: ## If FAIL, list the WORST assignment from each failed category
+        resubmit = []
+        if not FA_pass:
+            fa_items = [a for a in assignments if a[1] == 'FA']
+            if fa_items:
+                worst = min(fa_items, key=lambda x: x[2]) 
+                resubmit.append(worst[0])
+        
+        if not SA_pass:
+            sa_items = [a for a in assignments if a[1] == 'SA']
+            if sa_items:
+                worst = min(sa_items, key=lambda x: x[2])
+                # Only append if not already added (in case both categories fail and worst is the same assignment)
+                if worst[0] not in resubmit:
+                    resubmit.append(worst[0])
+    
+        result = ", ".join(resubmit)
+
+    # --- OUTPUT ---
+    print("\n--- RESULTS ---")
+    print(f"Total Formative:  {FA:.2f} / 60")
+    print(f"Total Summative:  {SA:.2f} / 40")
+    print("----------------------")
+    print(f"Total Grade:      {total_grade:.2f} / 100")
+    print(f"GPA:              {gpa:.4f}")
+    print(f"Status:           {status}")
+
+    print(f"Resubmission:     {result}")
+    
+    print("\n")
     export_to_csv(assignments)
 
-
 if __name__ == "__main__":
-    main()
-
-
+     main()
